@@ -1,0 +1,10 @@
+streamlit
+pandas
+datetime
+folium
+streamlit_folium
+st_folium
+openmeteo_requests
+requests_cache
+retry_requests
+retry
