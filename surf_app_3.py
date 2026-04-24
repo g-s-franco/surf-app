@@ -84,23 +84,34 @@ with col1:
         st.session_state.selected_row_idx = [0] 
 
     # MAP CONFIGURATION
+    # We set tiles=None so we can manually define the order and names of layers
     m = folium.Map(
         location=st.session_state.map_center, 
         zoom_start=st.session_state.map_zoom,
-        control_scale=True
+        control_scale=True,
+        tiles=None 
     )
 
-    # Google Hybrid Layer: Satellite + Labels
+    # 1. Google Hybrid (Satellite + Place Names) - Set as DEFAULT
     google_hybrid = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
     folium.TileLayer(
         tiles=google_hybrid,
         attr='Google',
         name='Satélite (Híbrido)',
         overlay=False,
-        control=True
+        control=True,
+        show=True  # This makes it the default visible layer
     ).add_to(m)
     
-    folium.TileLayer('openstreetmap', name='Ruas').add_to(m)
+    # 2. Standard Streets (Optional backup)
+    folium.TileLayer(
+        'openstreetmap', 
+        name='Mapa de Ruas',
+        overlay=False,
+        control=True,
+        show=False
+    ).add_to(m)
+
     folium.LayerControl().add_to(m)
 
     # ARROW LOGIC
