@@ -18,7 +18,7 @@ openmeteo = openmeteo_requests.Client(session=retry_session)
 
 # 2. FUNÇÕES AUXILIARES
 def get_arrow(deg):
-    if pd.isna(deg): return "-"
+    if pd.isna(deg): return "-"
     arrows = ['↓', '↙', '←', '↖', '↑', '↗', '→', '↘']
     idx = int((deg + 22.5) % 360 // 45)
     return arrows[idx]
