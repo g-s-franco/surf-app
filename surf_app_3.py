@@ -437,7 +437,7 @@ with col2:
 
         ]
 
-        styled_df = style_forecast(disp[cols])
+        styled_df = style_forecast(disp[colunas_exibir])
 
         
 
