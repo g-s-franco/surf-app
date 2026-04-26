@@ -48,36 +48,46 @@ def get_arrow(deg):
 
 def style_forecast(df):
     def apply_styles(row):
+        # Criar lista de estilos vazios
         styles = [''] * len(row)
-        cols = list(row.index)
         
-        idx_ar = cols.index("Ar (°C)")
-        idx_orvalho = cols.index("Orvalho (°C)")
-        idx_sst = cols.index("SST (°C)")
-        idx_vis = cols.index("Visibilidade (km)")
-        
-        diff = abs(row["Ar (°C)"] - row["Orvalho (°C)"])
+        # Extrair valores para facilitar a lógica
+        ar = row["Ar (°C)"]
+        orvalho = row["Orvalho (°C)"]
+        sst = row["SST (°C)"]
         vis = row["Visibilidade (km)"]
         
-        # 1. Alerta por proximidade (Física do Ar)
+        # Identificar índices das colunas
+        idx_ar = df.columns.get_loc("Ar (°C)")
+        idx_orvalho = df.columns.get_loc("Orvalho (°C)")
+        idx_sst = df.columns.get_loc("SST (°C)")
+        idx_vis = df.columns.get_loc("Visibilidade (km)")
+        
+        # 1. Lógica Nevoeiro (Ar e Orvalho)
+        diff = abs(ar - orvalho)
         if diff < 0.5:
-            styles[idx_ar] = styles[idx_orvalho] = 'background-color: #ff4b4b; color: white'
+            bg = 'background-color: #ff4b4b; color: white;' # Vermelho
+            styles[idx_ar] = styles[idx_orvalho] = bg
         elif 0.5 <= diff <= 2.0:
-            styles[idx_ar] = styles[idx_orvalho] = 'background-color: #f1c40f; color: black'
+            bg = 'background-color: #f1c40f; color: black;' # Amarelo
+            styles[idx_ar] = styles[idx_orvalho] = bg
             
-        # 2. Alerta pelo dado da API (Distância de Visão)
-        if vis < 1.0: # Menos de 1km
-            styles[idx_vis] = 'background-color: #ff4b4b; color: white; font-weight: bold'
-        elif 1.0 <= vis <= 5.0: # Entre 1km e 5km
-            styles[idx_vis] = 'background-color: #f1c40f; color: black'
+        # 2. Lógica SST < Orvalho (Muro Marítimo) - Pinta SST e Orvalho de Laranja
+        if sst < orvalho:
+            orange = 'background-color: #e67e22; color: white; font-weight: bold;'
+            styles[idx_sst] = orange
+            styles[idx_orvalho] = orange # Sobrescreve se já for amarelo/vermelho por ser mais crítico
             
-        # 3. Lógica SST < Orvalho (O teu alerta de "Muro")
-        if row["SST (°C)"] < row["Orvalho (°C)"]:
-            styles[idx_sst] = styles[idx_orvalho] = 'background-color: #e67e22; color: white'
+        # 3. Lógica Visibilidade API
+        if vis < 1.0:
+            styles[idx_vis] = 'background-color: #ff4b4b; color: white;'
+        elif vis < 5.0:
+            styles[idx_vis] = 'background-color: #f1c40f; color: black;'
             
         return styles
 
-    return df.style.apply(apply_styles, axis=1).format(precision=1)
+    # Importante: Aplicar o estilo ANTES de qualquer outra formatação que transforme números em strings
+    return df.style.apply(apply_styles, axis=1).format(subset=["Visibilidade (km)", "Ar (°C)", "Orvalho (°C)", "SST (°C)", "Energia (kJ)"], precision=1)
 
 
 
