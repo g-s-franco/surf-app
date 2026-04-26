@@ -159,7 +159,6 @@ def fetch_data(lat, lon, date_obj):
 
         # CÁLCULO DA ENERGIA (H^2 * T)
         df_res['Energia (kJ)'] = (df_res['Swell_H']**2) * df_res['Período (s)']
-        
         return df_res
 
     except Exception as e:
@@ -438,7 +437,7 @@ with col2:
 
         ]
 
-        styled_df = style_forecast(disp_df[colunas_exibir])
+        styled_df = style_forecast(disp[cols])
 
         
 
