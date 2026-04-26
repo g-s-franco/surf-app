@@ -46,6 +46,39 @@ def get_arrow(deg):
 
     return arrows[idx]
 
+def style_forecast(df):
+    def apply_styles(row):
+        styles = [''] * len(row)
+        cols = list(row.index)
+        
+        idx_ar = cols.index("Ar (°C)")
+        idx_orvalho = cols.index("Orvalho (°C)")
+        idx_sst = cols.index("SST (°C)")
+        idx_vis = cols.index("Visibilidade (km)")
+        
+        diff = abs(row["Ar (°C)"] - row["Orvalho (°C)"])
+        vis = row["Visibilidade (km)"]
+        
+        # 1. Alerta por proximidade (Física do Ar)
+        if diff < 0.5:
+            styles[idx_ar] = styles[idx_orvalho] = 'background-color: #ff4b4b; color: white'
+        elif 0.5 <= diff <= 2.0:
+            styles[idx_ar] = styles[idx_orvalho] = 'background-color: #f1c40f; color: black'
+            
+        # 2. Alerta pelo dado da API (Distância de Visão)
+        if vis < 1.0: # Menos de 1km
+            styles[idx_vis] = 'background-color: #ff4b4b; color: white; font-weight: bold'
+        elif 1.0 <= vis <= 5.0: # Entre 1km e 5km
+            styles[idx_vis] = 'background-color: #f1c40f; color: black'
+            
+        # 3. Lógica SST < Orvalho (O teu alerta de "Muro")
+        if row["SST (°C)"] < row["Orvalho (°C)"]:
+            styles[idx_sst] = styles[idx_orvalho] = 'background-color: #e67e22; color: white'
+            
+        return styles
+
+    return df.style.apply(apply_styles, axis=1).format(precision=1)
+
 
 
 @st.cache_data(show_spinner=False) # Optimized for Cloud: Caches results to save API calls
@@ -62,7 +95,7 @@ def fetch_data(lat, lon, date_obj):
 
             "latitude": lat, "longitude": lon,
 
-            "hourly": ["temperature_2m", "dew_point_2m", "wind_speed_10m", "wind_direction_10m", "wet_bulb_temperature_2m"],
+            "hourly": ["temperature_2m", "dew_point_2m", "wind_speed_10m", "wind_direction_10m", "wet_bulb_temperature_2m", "visibility"],
 
             "timezone": "auto", "start_date": date_str, "end_date": date_str
 
@@ -103,6 +136,8 @@ def fetch_data(lat, lon, date_obj):
             "Ar (°C)": wh.Variables(0).ValuesAsNumpy(),
 
             "Orvalho (°C)": wh.Variables(1).ValuesAsNumpy(),
+            
+            "Visibilidade (km)": wh.Variables(5).ValuesAsNumpy() / 1000.0, # Converte metros para km
 
             "Vento_Vel": wh.Variables(2).ValuesAsNumpy(),
 
@@ -121,6 +156,11 @@ def fetch_data(lat, lon, date_obj):
             "Maré (m)": mh.Variables(4).ValuesAsNumpy()
 
         })
+
+        # CÁLCULO DA ENERGIA (H^2 * T)
+        df_res['Energia (kJ)'] = (df_res['Swell_H']**2) * df_res['Período (s)']
+        
+        return df_res
 
     except Exception as e:
 
@@ -392,11 +432,13 @@ with col2:
 
         colunas_exibir = [
 
-            "Hora", "Ar (°C)", "Orvalho (°C)", "Wet Bulb (°C)",
+            "Hora", "Ar (°C)", "Orvalho (°C)", "Wet Bulb (°C)", "Visibilidade (km)",
 
             "SST (°C)", "Vento", "Swell", "Período (s)", "Maré (m)"
 
         ]
+
+        styled_df = style_forecast(disp_df[colunas_exibir])
 
         
 
